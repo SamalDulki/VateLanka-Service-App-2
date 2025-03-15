@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
     color: COLORS.textGray,
   },
   warningBox: {
-    backgroundColor: "#FFEEEE",
+    backgroundColor: COLORS.bg3,
     padding: 10,
     borderRadius: 8,
     marginTop: 15,
@@ -818,13 +818,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   activeBadge: {
-    backgroundColor: "#E6F7E6",
+    backgroundColor: COLORS.bg1,
   },
   pausedBadge: {
-    backgroundColor: "#FFF8E6",
+    backgroundColor: COLORS.bg2,
   },
   inactiveBadge: {
-    backgroundColor: "#F0F0F0",
+    backgroundColor: COLORS.bg4,
   },
   statusBadgeText: {
     fontSize: 12,
