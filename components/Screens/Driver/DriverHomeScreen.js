@@ -74,22 +74,18 @@ export default function DriverHomeScreen({ route, navigation }) {
 
       const initLoc = async () => {
         try {
-          // Initialize the location service
           await locationService.initialize();
           locationInitialized.current = true;
 
-          // Check location permissions
           const { status } = await Location.getForegroundPermissionsAsync();
           setLocationPermission(status);
 
-          // If permission is not granted, request it
           if (status !== "granted") {
             const { status: newStatus } =
               await Location.requestForegroundPermissionsAsync();
             setLocationPermission(newStatus);
 
             if (newStatus === "granted") {
-              // Check if location services are enabled
               const isEnabled = await Location.hasServicesEnabledAsync();
               if (!isEnabled) {
                 showNotification(
@@ -99,7 +95,6 @@ export default function DriverHomeScreen({ route, navigation }) {
                 return;
               }
 
-              // Now that permission is granted, check current location
               await checkCurrentLocation();
             } else {
               showNotification(
@@ -108,7 +103,6 @@ export default function DriverHomeScreen({ route, navigation }) {
               );
             }
           } else {
-            // Permission was already granted, check current location
             await checkCurrentLocation();
           }
         } catch (error) {
@@ -126,10 +120,8 @@ export default function DriverHomeScreen({ route, navigation }) {
 
   const checkCurrentLocation = async () => {
     try {
-      // First check if permissions are already granted
       let { status } = await Location.getForegroundPermissionsAsync();
 
-      // If permissions aren't granted, request them
       if (status !== "granted") {
         const { status: newStatus } =
           await Location.requestForegroundPermissionsAsync();
@@ -138,7 +130,6 @@ export default function DriverHomeScreen({ route, navigation }) {
       }
 
       if (status === "granted") {
-        // Check if location services are enabled
         const isEnabled = await Location.hasServicesEnabledAsync();
         if (!isEnabled) {
           showNotification(
@@ -148,7 +139,6 @@ export default function DriverHomeScreen({ route, navigation }) {
           return;
         }
 
-        // Get current position with a timeout option
         const location = await Promise.race([
           Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.Balanced,
@@ -156,7 +146,7 @@ export default function DriverHomeScreen({ route, navigation }) {
           new Promise((_, reject) =>
             setTimeout(
               () => reject(new Error("Location request timed out")),
-              10000
+              20000
             )
           ),
         ]);
@@ -173,7 +163,6 @@ export default function DriverHomeScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error("Error getting initial location:", error);
-      // More specific error handling
       if (error.message.includes("Location request timed out")) {
         showNotification(
           "Location request timed out. Please try again or check your device settings.",
@@ -304,7 +293,6 @@ export default function DriverHomeScreen({ route, navigation }) {
         }
       }
 
-      // Check if location services are enabled
       const isEnabled = await Location.hasServicesEnabledAsync();
       if (!isEnabled) {
         showNotification(
