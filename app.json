@@ -17,6 +17,9 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "VateLanka needs to track your location for waste collection routes",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "VateLanka needs background location access to track waste collection routes"
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyCAlQrLUYEmcVRj8nd1W6HZKOpMfHsweDw"
       }
     },
     "android": {
@@ -29,8 +32,15 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE"
-      ]
+        "FOREGROUND_SERVICE",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCAlQrLUYEmcVRj8nd1W6HZKOpMfHsweDw"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -42,6 +52,11 @@
           "locationAlwaysAndWhenInUsePermission": "Allow VateLanka to use your location for waste collection tracking."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e9818fe1-4cba-48f7-9066-36626105bc44"
+      }
+    }
   }
 }
