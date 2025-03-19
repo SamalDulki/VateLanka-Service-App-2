@@ -36,6 +36,7 @@ export default function DriverHomeScreen({ route, navigation }) {
     message: "",
     type: "success",
   });
+  const [statusResetChecked, setStatusResetChecked] = useState(false);
 
   const locationInitialized = useRef(false);
 
@@ -76,6 +77,16 @@ export default function DriverHomeScreen({ route, navigation }) {
         try {
           await locationService.initialize();
           locationInitialized.current = true;
+
+          // Check if we need to reset route status for a new day
+          if (!statusResetChecked) {
+            const wasReset = await locationService.checkAndResetRouteStatus();
+            if (wasReset) {
+              setRouteStatus("idle");
+              showNotification("Route status reset for a new day", "success");
+            }
+            setStatusResetChecked(true);
+          }
 
           const { status } = await Location.getForegroundPermissionsAsync();
           setLocationPermission(status);
@@ -241,6 +252,16 @@ export default function DriverHomeScreen({ route, navigation }) {
   const onRefresh = async () => {
     setRefreshing(true);
     await checkCurrentLocation();
+
+    // Re-check route status during refresh
+    if (locationInitialized.current) {
+      const wasReset = await locationService.checkAndResetRouteStatus();
+      if (wasReset) {
+        setRouteStatus("idle");
+        showNotification("Route status reset for a new day", "success");
+      }
+    }
+
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
