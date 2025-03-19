@@ -15,9 +15,11 @@ import CustomText from "../../utils/CustomText";
 import Icon from "react-native-vector-icons/Feather";
 import * as Location from "expo-location";
 import NotificationBanner from "../../utils/NotificationBanner";
+import locationService from "../../utils/LocationService";
 
 export default function MapViewScreen({ route, navigation }) {
-  const { profile, routeStatus } = route.params;
+  const { profile, routeStatus: initialRouteStatus } = route.params;
+  const [routeStatus, setRouteStatus] = useState(initialRouteStatus);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState({
@@ -27,6 +29,7 @@ export default function MapViewScreen({ route, navigation }) {
   });
   const mapRef = useRef(null);
   const locationSubscription = useRef(null);
+  const [statusChecked, setStatusChecked] = useState(false);
 
   const showNotification = (message, type = "error") => {
     setNotification({
@@ -37,6 +40,22 @@ export default function MapViewScreen({ route, navigation }) {
   };
 
   useEffect(() => {
+    const checkStatus = async () => {
+      if (!statusChecked && initialRouteStatus === "completed") {
+        try {
+          const wasReset = await locationService.checkAndResetRouteStatus();
+          if (wasReset) {
+            setRouteStatus("idle");
+            showNotification("Route status reset for a new day", "success");
+          }
+        } catch (error) {
+          console.error("Error checking route status:", error);
+        }
+        setStatusChecked(true);
+      }
+    };
+
+    checkStatus();
     setupLocation();
 
     return () => {
