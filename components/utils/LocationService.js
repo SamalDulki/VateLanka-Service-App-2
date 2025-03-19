@@ -1,6 +1,6 @@
 import * as Location from "expo-location";
 import { firestore } from "./firebaseConfig";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 
 class LocationService {
   constructor() {
@@ -13,6 +13,7 @@ class LocationService {
     this.currentSupervisorId = null;
     this.routeStatus = "idle";
     this.initialized = false;
+    this.lastRouteDate = null;
   }
 
   async initialize() {
@@ -87,6 +88,51 @@ class LocationService {
     );
   }
 
+  async checkAndResetRouteStatus() {
+    try {
+      if (!this.currentTruckId) return false;
+
+      const truckRef = this.getTruckDocRef();
+      const truckDoc = await getDoc(truckRef);
+
+      if (!truckDoc.exists()) {
+        console.warn("Truck document not found during status check");
+        return false;
+      }
+
+      const truckData = truckDoc.data();
+      const currentStatus = truckData.routeStatus || "idle";
+      this.routeStatus = currentStatus;
+
+      const lastCompletedDate = truckData.lastCompletedDate;
+      if (!lastCompletedDate && currentStatus !== "completed") {
+        return false;
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+      const lastDate = lastCompletedDate
+        ? lastCompletedDate.split("T")[0]
+        : null;
+
+      if (lastDate && lastDate !== today && currentStatus === "completed") {
+        await updateDoc(truckRef, {
+          routeStatus: "idle",
+          lastStatusReset: serverTimestamp(),
+          lastResetDate: today,
+        });
+
+        this.routeStatus = "idle";
+        console.log("Route status reset from completed to idle for new day");
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error checking/resetting route status:", error);
+      return false;
+    }
+  }
+
   async startRoute() {
     try {
       await this.initialize();
@@ -113,6 +159,7 @@ class LocationService {
         await updateDoc(truckRef, {
           routeStatus: "active",
           lastLocationUpdate: serverTimestamp(),
+          lastRouteStarted: new Date().toISOString(),
         });
         this.routeStatus = "active";
       } catch (updateError) {
@@ -263,14 +310,17 @@ class LocationService {
       }
 
       this.isTracking = false;
+      const today = new Date().toISOString();
 
       const truckRef = this.getTruckDocRef();
       await updateDoc(truckRef, {
         routeStatus: "completed",
         lastLocationUpdate: serverTimestamp(),
+        lastCompletedDate: today,
       });
 
-      this.routeStatus = "idle";
+      this.routeStatus = "completed";
+      this.lastRouteDate = today;
       return true;
     } catch (error) {
       console.error("Error stopping route:", error);
