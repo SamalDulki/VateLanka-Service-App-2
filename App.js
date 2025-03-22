@@ -11,6 +11,9 @@ import DriverLoginScreen from "./components/Screens/DriverLoginScreen";
 import DriverHomeScreen from "./components/Screens/Driver/DriverHomeScreen";
 import MapViewScreen from "./components/Screens/Driver/MapViewScreen";
 import ConfirmStopScreen from "./components/Screens/Driver/ConfirmStopScreen";
+import AssignedTicketsScreen from "./components/Screens/Driver/AssignedTicketsScreen";
+import TicketDetailScreen from "./components/Screens/Driver/TicketDetailScreen";
+import CompleteTicketScreen from "./components/Screens/Driver/CompleteTicketScreen";
 
 import { auth } from "./components/utils/firebaseConfig";
 import { getDriverSession } from "./components/utils/authStorage";
@@ -53,9 +56,18 @@ const DriverStack = ({ userProfile }) => (
         presentation: "transparentModal",
       }}
     />
+    {/* Add these new screens */}
+    <Stack.Screen name="AssignedTickets" component={AssignedTicketsScreen} />
+    <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
+    <Stack.Screen 
+      name="CompleteTicket" 
+      component={CompleteTicketScreen}
+      options={{
+        cardStyleInterpolator: CardStyleInterpolators.forVerticalIOS,
+      }}
+    />
   </Stack.Navigator>
 );
-
 export default function App() {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState(null);
@@ -63,7 +75,6 @@ export default function App() {
   const [hasError, setHasError] = useState(false);
   const sessionCheckInterval = useRef(null);
 
-  // Error handling
   useEffect(() => {
     const errorHandler = (error, isFatal) => {
       if (isFatal) {
@@ -99,7 +110,6 @@ export default function App() {
         setUser(driverSession);
         setUserProfile(driverSession.profile);
 
-        // Clear interval once we have a valid session
         if (sessionCheckInterval.current) {
           clearInterval(sessionCheckInterval.current);
           sessionCheckInterval.current = null;
@@ -168,13 +178,11 @@ export default function App() {
       }
 
       // Start checking for session after a successful Firebase login
-      // but no valid session found immediately
       const found = await checkForValidSession();
 
       if (!found) {
         console.log("Starting session check interval...");
 
-        // Clear any existing interval before starting a new one
         if (sessionCheckInterval.current) {
           clearInterval(sessionCheckInterval.current);
         }
@@ -205,7 +213,6 @@ export default function App() {
 
     return () => {
       unsubscribe();
-      // Clear interval if component unmounts
       if (sessionCheckInterval.current) {
         clearInterval(sessionCheckInterval.current);
       }
