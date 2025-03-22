@@ -19,6 +19,10 @@ import locationService from "../../utils/LocationService";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import * as Location from "expo-location";
 import NotificationBanner from "../../utils/NotificationBanner";
+import {
+  fetchAssignedTicketsCount,
+  subscribeToAssignedTicketsCount,
+} from "../../utils/ticketUtils";
 
 export default function DriverHomeScreen({ route, navigation }) {
   const profile = route?.params?.profile || {};
@@ -37,6 +41,7 @@ export default function DriverHomeScreen({ route, navigation }) {
     type: "success",
   });
   const [statusResetChecked, setStatusResetChecked] = useState(false);
+  const [assignedTicketsCount, setAssignedTicketsCount] = useState(0);
 
   const locationInitialized = useRef(false);
 
@@ -51,6 +56,26 @@ export default function DriverHomeScreen({ route, navigation }) {
 
     return () => clearTimeout(timer);
   }, [loading]);
+
+  useEffect(() => {
+    let unsubscribe = () => {};
+
+    if (profile && profile.truckId) {
+      unsubscribe = subscribeToAssignedTicketsCount(
+        profile.truckId,
+        profile,
+        (count) => {
+          setAssignedTicketsCount(count);
+        }
+      );
+    }
+
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [profile]);
 
   useEffect(() => {
     updateGreeting();
@@ -78,7 +103,6 @@ export default function DriverHomeScreen({ route, navigation }) {
           await locationService.initialize();
           locationInitialized.current = true;
 
-          // Check if we need to reset route status for a new day
           if (!statusResetChecked) {
             const wasReset = await locationService.checkAndResetRouteStatus();
             if (wasReset) {
@@ -253,7 +277,6 @@ export default function DriverHomeScreen({ route, navigation }) {
     setRefreshing(true);
     await checkCurrentLocation();
 
-    // Re-check route status during refresh
     if (locationInitialized.current) {
       const wasReset = await locationService.checkAndResetRouteStatus();
       if (wasReset) {
@@ -500,6 +523,31 @@ export default function DriverHomeScreen({ route, navigation }) {
             </View>
           )}
         </View>
+
+        {assignedTicketsCount > 0 && (
+          <TouchableOpacity
+            style={styles.assignedTasksCard}
+            onPress={() => navigation.navigate("AssignedTickets", { profile })}
+          >
+            <View style={styles.assignedTasksHeader}>
+              <Icon name="clipboard" size={24} color={COLORS.white} />
+              <View style={styles.assignedTasksTextContainer}>
+                <CustomText style={styles.assignedTasksTitle}>
+                  {assignedTicketsCount}{" "}
+                  {assignedTicketsCount === 1 ? "Task" : "Tasks"} Assigned
+                </CustomText>
+                <CustomText style={styles.assignedTasksSubtitle}>
+                  Tap to view assigned collection tasks
+                </CustomText>
+              </View>
+              <View style={styles.assignedTasksBadge}>
+                <CustomText style={styles.assignedTasksBadgeText}>
+                  {assignedTicketsCount}
+                </CustomText>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {currentLocation && isValidLocation(currentLocation) && (
           <View style={styles.mapPreviewContainer}>
@@ -876,5 +924,49 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 14,
     fontWeight: "600",
+  },
+  assignedTasksCard: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 15,
+    marginBottom: 20,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    overflow: "hidden",
+  },
+  assignedTasksHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+  },
+  assignedTasksTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  assignedTasksTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.white,
+  },
+  assignedTasksSubtitle: {
+    fontSize: 12,
+    color: COLORS.white,
+    opacity: 0.8,
+    marginTop: 2,
+  },
+  assignedTasksBadge: {
+    backgroundColor: COLORS.white,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  assignedTasksBadgeText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.primary,
   },
 });
