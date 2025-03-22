@@ -9,11 +9,14 @@ import {
   RefreshControl,
   Platform,
   Image,
+  Linking,
+  Alert,
 } from "react-native";
 import { COLORS } from "../../utils/Constants";
 import CustomText from "../../utils/CustomText";
 import { logout } from "../../services/firebaseAuth";
 import Icon from "react-native-vector-icons/Feather";
+import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import { subscribeToDriverUpdates } from "../../services/firebaseFirestore";
 import locationService from "../../utils/LocationService";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
@@ -23,6 +26,8 @@ import {
   fetchAssignedTicketsCount,
   subscribeToAssignedTicketsCount,
 } from "../../utils/ticketUtils";
+import { doc, getDoc } from "firebase/firestore";
+import { firestore } from "../../utils/firebaseConfig";
 
 export default function DriverHomeScreen({ route, navigation }) {
   const profile = route?.params?.profile || {};
@@ -42,6 +47,7 @@ export default function DriverHomeScreen({ route, navigation }) {
   });
   const [statusResetChecked, setStatusResetChecked] = useState(false);
   const [assignedTicketsCount, setAssignedTicketsCount] = useState(0);
+  const [supervisorPhone, setSupervisorPhone] = useState(null);
 
   const locationInitialized = useRef(false);
 
@@ -56,6 +62,37 @@ export default function DriverHomeScreen({ route, navigation }) {
 
     return () => clearTimeout(timer);
   }, [loading]);
+
+  useEffect(() => {
+    const fetchSupervisorPhone = async () => {
+      if (
+        profile &&
+        profile.supervisorId &&
+        profile.municipalCouncil &&
+        profile.district &&
+        profile.ward
+      ) {
+        try {
+          const supervisorRef = doc(
+            firestore,
+            `municipalCouncils/${profile.municipalCouncil}/Districts/${profile.district}/Wards/${profile.ward}/supervisors/${profile.supervisorId}`
+          );
+
+          const supervisorDoc = await getDoc(supervisorRef);
+          if (supervisorDoc.exists()) {
+            const supervisorData = supervisorDoc.data();
+            if (supervisorData.phoneNumber) {
+              setSupervisorPhone(supervisorData.phoneNumber);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching supervisor phone:", error);
+        }
+      }
+    };
+
+    fetchSupervisorPhone();
+  }, [profile]);
 
   useEffect(() => {
     let unsubscribe = () => {};
@@ -81,6 +118,10 @@ export default function DriverHomeScreen({ route, navigation }) {
     updateGreeting();
     if (profile.driverName) {
       setFirstName(profile.driverName);
+    }
+
+    if (profile.supervisorPhone) {
+      setSupervisorPhone(profile.supervisorPhone);
     }
 
     if (
@@ -246,6 +287,10 @@ export default function DriverHomeScreen({ route, navigation }) {
             if (data.currentLocation) {
               setCurrentLocation(data.currentLocation);
             }
+
+            if (data.supervisorPhone && !supervisorPhone) {
+              setSupervisorPhone(data.supervisorPhone);
+            }
           }
           setLoading(false);
           setRefreshing(false);
@@ -312,6 +357,28 @@ export default function DriverHomeScreen({ route, navigation }) {
       console.error("Logout error:", error);
       showNotification("Failed to logout. Please try again.", "error");
     }
+  };
+
+  const handleCallSupervisor = () => {
+    if (!supervisorPhone) {
+      showNotification("Supervisor phone number not available", "error");
+      return;
+    }
+
+    const phoneUrl = `tel:${supervisorPhone}`;
+    Linking.canOpenURL(phoneUrl)
+      .then((supported) => {
+        if (supported) {
+          showNotification(`Calling supervisor`, "success");
+          return Linking.openURL(phoneUrl);
+        } else {
+          showNotification("Phone calls not supported on this device", "error");
+        }
+      })
+      .catch((error) => {
+        console.error("Error making phone call:", error);
+        showNotification("Failed to make call. Please try again.", "error");
+      });
   };
 
   const handleStartRoute = async () => {
@@ -444,9 +511,22 @@ export default function DriverHomeScreen({ route, navigation }) {
             })}
           </CustomText>
         </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Icon name="log-out" size={24} color={COLORS.primary} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={handleCallSupervisor}
+            style={styles.callButton}
+            disabled={!supervisorPhone}
+          >
+            <MaterialIcon
+              name="call"
+              size={24}
+              color={supervisorPhone ? COLORS.primary : COLORS.borderGray}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <Icon name="log-out" size={24} color={COLORS.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -733,8 +813,16 @@ const styles = StyleSheet.create({
     color: COLORS.textGray,
     marginTop: 4,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   logoutButton: {
     padding: 10,
+  },
+  callButton: {
+    padding: 10,
+    marginRight: 5,
   },
   content: {
     flex: 1,
