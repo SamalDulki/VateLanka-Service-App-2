@@ -14,9 +14,8 @@ export default function DailyReport() {
   const [date, setDate] = useState("");
   const [area, setArea] = useState("");
   const [description, setDescription] = useState("");
-}
 
-const handleSubmit = () => {
+  const handleSubmit = () => {
   if(!date || !area || !description){
     Alert.alert("Error", "Please fill in all fields before submiting.");
     return
@@ -30,7 +29,10 @@ const handleSubmit = () => {
   setDate("");
   setArea("");
   setDescription("");
-}
+};
+
+
+
 
 return (
     <SafeAreaView style={styles.container}>
@@ -68,6 +70,56 @@ return (
       </ScrollView>
     </SafeAreaView>
   );
+}  
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
+  },
+  content: {
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  label: {
+    fontSize: 16,
+    color: "#555",
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 15,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  submitButton: {
+    backgroundColor: "#4CAF50",
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  submitButtonText: {
+    fontSize: 16,
+    color: "#fff",
+    fontWeight: "bold",
+  },
+});
+
+
 
 
 
