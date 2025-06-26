@@ -32,4 +32,42 @@ const handleSubmit = () => {
   setDescription("");
 }
 
+return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Waste Delivery Report</Text>
+
+        <Text style={styles.label}>Delivery Date</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter delivery date (e.g., 2025-06-20)"
+          value={date}
+          onChangeText={setDate}
+        />
+
+        <Text style={styles.label}>Delivery Area</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter area (e.g., Westminster)"
+          value={area}
+          onChangeText={setArea}
+        />
+
+        <Text style={styles.label}>Description</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          placeholder="Describe the delivery..."
+          value={description}
+          onChangeText={setDescription}
+          multiline
+        />
+
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+          <Text style={styles.submitButtonText}>Submit Report</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+
+
 
