@@ -10,12 +10,14 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 
 export default function DailyReport() {
   const [date, setDate] = useState("");
   const [area, setArea] = useState("");
   const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = () => {
     // Trim input values
@@ -24,29 +26,36 @@ export default function DailyReport() {
       return;
     }
 
-    // Show confirmation alert after successful submission
-    Alert.alert(
-      "Success",
-      "Report submitted successfully!\n\nWould you like to clear the form?",
-      [
-        {
-          text: "Keep Form",
-          style: "cancel",
-          onPress: () => console.log("User chose to keep form data"),
-        },
-        {
-          text: "Clear Form",
-          style: "destructive",
-          onPress: () => {
-            setDate("");
-            setArea("");
-            setDescription("");
-            console.log("Form cleared after submission");
+    setIsSubmitting(true);
+
+    // Simulate API submission delay
+    setTimeout(() => {
+      setIsSubmitting(false);
+
+      // Show confirmation alert after successful submission
+      Alert.alert(
+        "Success",
+        "Report submitted successfully!\n\nWould you like to clear the form?",
+        [
+          {
+            text: "Keep Form",
+            style: "cancel",
+            onPress: () => console.log("User chose to keep form data"),
           },
-        },
-      ],
-      { cancelable: false }
-    );
+          {
+            text: "Clear Form",
+            style: "destructive",
+            onPress: () => {
+              setDate("");
+              setArea("");
+              setDescription("");
+              console.log("Form cleared after submission");
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    }, 1500); // Simulate 1.5 second delay
   };
 
   return (
@@ -86,8 +95,19 @@ export default function DailyReport() {
             accessibilityLabel="Description Input"
           />
 
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={styles.submitButtonText}>Submit Report</Text>
+          <TouchableOpacity
+            style={[
+              styles.submitButton,
+              isSubmitting && styles.submitButtonDisabled,
+            ]}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Submit Report</Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -134,6 +154,9 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#A5D6A7",
   },
   submitButtonText: {
     fontSize: 16,
